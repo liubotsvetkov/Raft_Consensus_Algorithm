@@ -3,7 +3,6 @@ Demo implementation of Raft Consensus Algorithm on a key-value map using Node.js
 
 ## Build and Deploy
 
-### Build Docker image
 ```
 docker build -t raft-node .
 docker-compose up -d
