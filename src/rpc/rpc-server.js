@@ -1,23 +1,32 @@
 const grpc = require("@grpc/grpc-js");
-const proto_services = require("./proto/proto-service-loader");
-
-const AppendEntriesService = proto_services.AppendEntriesService;
+const RaftService = require("./proto/proto-loader");
 
 const mockResult = { term: 1, success: true };
+const mockResult2 = { term: 1, voteGranted: true };
 
-function processAppendEntry(request) {
+function processAppendEntries(request) {
     console.log(request);
     return mockResult;
 }
 
-function postAppendEntry(call, callback) {
-    callback(null, processAppendEntry(call.request));
+function processVoteRequest(request) {
+    console.log(request);
+    return mockResult2;
+}
+
+function appendEntries(call, callback) {
+    callback(null, processAppendEntries(call.request));
+}
+
+function voteRequest(call, callback) {
+    callback(null, processVoteRequest(call.request));
 }
 
 function getServer() {
     const server = new grpc.Server();
-    server.addService(AppendEntriesService.service, {
-        postAppendEntry
+    server.addService(RaftService.service, {
+        appendEntries,
+        voteRequest
     });
     return server;
 }
