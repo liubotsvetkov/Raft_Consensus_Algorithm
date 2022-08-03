@@ -1,0 +1,23 @@
+{
+  "name": "raft_consensus_algorithm",
+  "version": "1.0.0",
+  "description": "Demo implementation of Raft Consensus Algorithm on a key-value map using Node.js and multiple docker containers",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liubotsvetkov/Raft_Consensus_Algorithm.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/liubotsvetkov/Raft_Consensus_Algorithm/issues"
+  },
+  "homepage": "https://github.com/liubotsvetkov/Raft_Consensus_Algorithm#readme",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.6.8",
+    "express": "^4.18.1"
+  }
+}
