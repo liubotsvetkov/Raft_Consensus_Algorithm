@@ -30,7 +30,7 @@ rpc_server.bindAsync(
         await rpc_server.start();
         if (Constants.LEADER_ID === 'node-3') {
             rpc_client.forEach((client) => {
-                client.postAppendEntry(mockReqData, (error, result) => {
+                client.appendEntries(mockReqData, (error, result) => {
                     if (error) console.log(error)
                     console.log(result);
                 });
