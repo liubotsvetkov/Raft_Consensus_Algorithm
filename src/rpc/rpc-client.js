@@ -3,14 +3,14 @@ const Constants = require("../utils/constants");
 const RaftService = require("./proto/proto-loader");
 
 function getClients() {
-    const clientArray = [];
+    const clients = {};
     Constants.PEER_IDS.forEach((peer_id) => {
-        clientArray.push(new RaftService(
+        clients[peer_id] = new RaftService(
             `${peer_id}:${Constants.RPC_SERVER_PORT}`,
             grpc.credentials.createInsecure()
-        ));
+        );
     });
-    return clientArray;
+    return clients;
 }
 
 module.exports = getClients();
