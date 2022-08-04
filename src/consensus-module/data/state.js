@@ -5,6 +5,7 @@ const state = {
     ...loadPersistentState(),
     commitIndex: 0,
     lastApplied: 0,
+    status: Constants.status.Follower,
     nextIndex: {},
     matchIndex: {}
 };
@@ -34,6 +35,10 @@ module.exports = {
             state.currentTerm = newTerm;
             persistState();
         }
+    },
+    incrementCurrentTerm: function () {
+        state.currentTerm = state.currentTerm + 1;
+        persistState();
     },
     getCurrentTerm: function () {
         return state.currentTerm;
@@ -78,5 +83,13 @@ module.exports = {
     },
     getMatchIndex: function (nodeId) {
         return state.matchIndex[nodeId];
+    },
+    getStatus: function () {
+        return state.status;
+    },
+    setStatus: function (newStatus) {
+        if (Object.values(Constants.status).includes(newStatus)) {
+            state.status = newStatus;
+        }
     }
 };

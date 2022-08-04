@@ -9,7 +9,7 @@ services:
       - "3000:3000"
       - "50051:50051"
     environment:
-      LEADER_ID: node-1
+      SELF_ID: node-1
       PEER_IDS: node-2,node-3
     networks:
       - app-network
@@ -23,7 +23,7 @@ services:
     depends_on:
       - node-1
     environment:
-      LEADER_ID: node-2
+      SELF_ID: node-2
       PEER_IDS: node-1,node-3
     networks:
       - app-network
@@ -38,7 +38,7 @@ services:
       - node-1
       - node-2
     environment:
-      LEADER_ID: node-3
+      SELF_ID: node-3
       PEER_IDS: node-1,node-2
     networks:
       - app-network
