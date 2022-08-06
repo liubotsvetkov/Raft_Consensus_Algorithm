@@ -1,6 +1,6 @@
 const grpc = require("@grpc/grpc-js");
 const RaftService = require("./proto/proto-loader");
-const election_timeout_util = require("../utils/election-timeout-util");
+const election_service = require("../consensus-module/services/election-service");
 
 const mockResult = { term: 1, success: true };
 const mockResult2 = { term: 1, voteGranted: true };
@@ -10,26 +10,19 @@ function processAppendEntries(request) {
     return mockResult;
 }
 
-function processVoteRequest(request) {
-    console.log(request);
-    return mockResult2;
-}
-
 function appendEntries(call, callback) {
-    election_timeout_util.resetTimer();
     callback(null, processAppendEntries(call.request));
 }
 
-function voteRequest(call, callback) {
-    election_timeout_util.resetTimer();
-    callback(null, processVoteRequest(call.request));
+function requestVote(call, callback) {
+    callback(null, election_service.processVoteRequest(call.request));
 }
 
 function getServer() {
     const server = new grpc.Server();
     server.addService(RaftService.service, {
         appendEntries,
-        voteRequest
+        requestVote
     });
     return server;
 }

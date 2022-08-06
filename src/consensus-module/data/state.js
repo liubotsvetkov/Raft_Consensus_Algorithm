@@ -5,7 +5,7 @@ const state = {
     ...loadPersistentState(),
     commitIndex: 0,
     lastApplied: 0,
-    status: Constants.status.Follower,
+    status: Constants.status.None,
     nextIndex: {},
     matchIndex: {}
 };
@@ -44,10 +44,8 @@ module.exports = {
         return state.currentTerm;
     },
     setVotedFor: function (newVotedFor) {
-        if (newVotedFor) {
-            state.votedFor = newVotedFor;
-            persistState();
-        }
+        state.votedFor = newVotedFor;
+        persistState();
     },
     getVotedFor: function () {
         return state.votedFor;
