@@ -1,12 +1,12 @@
 const election_service = require("../consensus-module/services/election-service");
 
-function timeoutHandler() {
+async function timeoutHandler() {
     election_service.startElection();
 }
 
 function generateRandomInterval() {
-    //random interval between 150ms and 300ms
-    return Math.floor(Math.random() * (300 - 150 + 1) + 150);
+    //random interval between 200ms and 400ms
+    return Math.floor(Math.random() * (400 - 200 + 1) + 200);
 }
 
 let timerHandle;
@@ -15,8 +15,13 @@ module.exports = {
     startTimer: function () {
         timerHandle = setInterval(timeoutHandler, generateRandomInterval());
     },
-    resetTimer: function () {
-        timerHandle.clearTimeout(timerHandle);
+    stopTimer: function () {
+        clearInterval(timerHandle);
+    },
+    restartTimer: function () {
+        if (timerHandle) {
+            clearInterval(timerHandle);
+        }
         timerHandle = setInterval(timeoutHandler, generateRandomInterval());
     }
 }
