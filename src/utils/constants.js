@@ -8,6 +8,7 @@ module.exports = {
     status: {
         Candidate: 'Candidate',
         Leader: 'Leader',
-        Follower: 'Follower'
+        Follower: 'Follower',
+        None: 'None'
     }
 }

@@ -20,8 +20,6 @@ services:
     ports:
       - "3001:3000"
       - "50052:50051"
-    depends_on:
-      - node-1
     environment:
       SELF_ID: node-2
       PEER_IDS: node-1,node-3
@@ -34,9 +32,6 @@ services:
     ports:
       - "3002:3000"
       - "50053:50051"
-    depends_on:
-      - node-1
-      - node-2
     environment:
       SELF_ID: node-3
       PEER_IDS: node-1,node-2
