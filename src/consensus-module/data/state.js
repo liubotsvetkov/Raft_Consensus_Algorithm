@@ -1,11 +1,13 @@
 const fs = require('fs');
 const Constants = require("../../utils/constants");
+const log = require("./log");
 
 const state = {
     ...loadPersistentState(),
     commitIndex: 0,
     lastApplied: 0,
     status: Constants.status.None,
+    leaderId: undefined,
     nextIndex: {},
     matchIndex: {}
 };
@@ -72,7 +74,7 @@ module.exports = {
         }
     },
     getNextIndex: function (nodeId) {
-        return state.nextIndex[nodeId];
+        return state.nextIndex[nodeId] || 0;
     },
     setMatchIndex: function (nodeId, newMatchIndex) {
         if (nodeId && newMatchIndex) {
@@ -80,7 +82,7 @@ module.exports = {
         }
     },
     getMatchIndex: function (nodeId) {
-        return state.matchIndex[nodeId];
+        return state.matchIndex[nodeId] || 0;
     },
     getStatus: function () {
         return state.status;
@@ -88,6 +90,28 @@ module.exports = {
     setStatus: function (newStatus) {
         if (Object.values(Constants.status).includes(newStatus)) {
             state.status = newStatus;
+        }
+    },
+    setFollowerState: function (term) {
+        if (term) {
+            this.setCurrentTerm(term);
+            this.setStatus(Constants.status.Follower);
+            this.setVotedFor(null);
+        }
+    },
+    setLeaderState: function () {
+        this.setStatus(Constants.status.Leader);
+        Constants.PEER_IDS.forEach((nodeId) => {
+            this.setNextIndex(nodeId, log.length());
+            this.setMatchIndex(nodeId, -1);
+        });
+    },
+    getLeaderId: function () {
+        return state.leaderId;
+    },
+    setLeaderId: function (leaderId) {
+        if (leaderId) {
+            state.leaderId = leaderId;
         }
     }
 };

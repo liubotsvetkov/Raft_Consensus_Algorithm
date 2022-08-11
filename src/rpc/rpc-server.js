@@ -1,21 +1,13 @@
 const grpc = require("@grpc/grpc-js");
 const RaftService = require("./proto/proto-loader");
-const election_service = require("../consensus-module/services/election-service");
-
-const mockResult = { term: 1, success: true };
-const mockResult2 = { term: 1, voteGranted: true };
-
-function processAppendEntries(request) {
-    console.log(request);
-    return mockResult;
-}
+const consensus_service = require("../consensus-module/consensus-service");
 
 function appendEntries(call, callback) {
-    callback(null, processAppendEntries(call.request));
+    callback(null, consensus_service.appendEntries(call.request));
 }
 
 function requestVote(call, callback) {
-    callback(null, election_service.processVoteRequest(call.request));
+    callback(null, consensus_service.processVoteRequest(call.request));
 }
 
 function getServer() {

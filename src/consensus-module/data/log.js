@@ -1,4 +1,5 @@
 const fs = require('fs');
+const { start } = require('../../rpc/rpc-server');
 const Constants = require("../../utils/constants");
 
 const log = loadPersistentLog();
@@ -26,9 +27,12 @@ module.exports = {
     findByIndex: function (index) {
         return log[index];
     },
-    insertAtIndex: function (index, value) {
-        if (value) {
-            log[index] = value;
+    getLogDataReadOnly: function (startIndex = 0, endIndex = log.length) {
+        return Object.freeze(log.slice(startIndex, endIndex));
+    },
+    insertFromIndex: function (startIndex, entries) {
+        if (index && entries) {
+            log.splice(startIndex, log.legth - startIndex, ...entries);
             persistLog();
         }
     },

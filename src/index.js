@@ -2,7 +2,7 @@ const grpc = require("@grpc/grpc-js");
 const rest_server = require("./key-value-map/rest-server");
 const rpc_server = require("./rpc/rpc-server");
 const Constants = require("./utils/constants");
-const election_service = require("./consensus-module/services/election-service");
+const consensus_service = require("./consensus-module/consensus-service");
 const state = require("./consensus-module/data/state");
 
 rest_server.listen(Constants.REST_SERVER_PORT, () => {
@@ -18,7 +18,7 @@ rpc_server.bindAsync(
         //wait 1 second for server to boot
         setTimeout(() => {
             if (state.getStatus() === Constants.status.None) {
-                election_service.setOffElectionTimer()
+                consensus_service.setOffElectionTimer()
             }
         }, 1000);
     }
