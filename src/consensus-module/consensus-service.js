@@ -7,9 +7,7 @@ let leaderElectionTimer;
 
 function generateRandomInterval() {
     //random interval between 300ms and 500ms
-    const interval = Math.floor(Math.random() * (500 - 300 + 1) + 300);
-    console.log("Random interval is " + interval);
-    return interval;
+    return Math.floor(Math.random() * (500 - 300 + 1) + 300);
 }
 
 function stopElectionTimer() {
@@ -142,7 +140,7 @@ async function sendAppendEntriesRequest(peer, savedCurrentTerm, peerNextIndex) {
     return result;
 }
 
-function updateCommitIndex() {
+function updateCommitIndexLeader() {
     const savedCommitIndex = state.getCommitIndex();
     let matchCount;
     for (let index = state.getCommitIndex() + 1; index < log.length(); index++) {
@@ -168,6 +166,18 @@ function handleAppendEntriesResponse(appendEntriesResponse, savedCurrentTerm, pe
         console.log('Term in AppendEntries response is bigger, hence becoming a follower.');
         startFollower(appendEntriesResponse.term);
         return;
+    }
+    if (state.getStatus() === Constants.status.Leader && savedCurrentTerm === appendEntriesResponse.term) {
+        if (appendEntriesResponse.success) {
+            const newEntries = log.getLogDataReadOnly(peerNextIndex);
+            state.setNextIndex(peer.id, peerNextIndex + newEntries.length);
+            state.setMatchIndex(peer.id, state.getNextIndex(peer.id) - 1);
+            console.log(`AppendEntries reply from ${peer.id} success: nextIndex: ${state.getNextIndex(peer.id)}, matchIndex: ${state.getMatchIndex(peer.id)}`);
+            updateCommitIndexLeader();
+        } else {
+            state.setNextIndex(peer.id, peerNextIndex - 1);
+            console.log(`AppendEntries reply from ${peer.id}: Failure - nextIndex is ${state.getNextIndex(peer.id)}`);
+        }
     }
 }
 
@@ -274,7 +284,7 @@ function replicateLogEntries(appendEntriesArgs) {
     }
 }
 
-function updateCommitIndex(appendEntriesArgs) {
+function updateCommitIndexFollower(appendEntriesArgs) {
     if (appendEntriesArgs.leaderCommit > state.getCommitIndex()) {
         state.setCommitIndex(Math.min(appendEntriesArgs.leaderCommit, log.length() - 1));
         console.log(`Setting commitIndex = ${state.getCommitIndex()}`);
@@ -287,7 +297,7 @@ function appendEntries(appendEntriesArgs) {
         console.log('Term in AppendEntries request is bigger, hence becoming a follower.');
         startFollower(appendEntriesArgs.term, true, false);
     }
-    let response = { success: true };
+    let response = { success: false };
     console.log(`appendentries term: ${appendEntriesArgs.term}; state current term: ${state.getCurrentTerm()}; equal ? ${appendEntriesArgs.term === state.getCurrentTerm()}`);
     if (appendEntriesArgs.term === state.getCurrentTerm()) {
         if (state.getStatus() !== Constants.status.Follower) {
@@ -296,10 +306,15 @@ function appendEntries(appendEntriesArgs) {
             startFollower(appendEntriesArgs.term, false, true);
         }
         if (state.getLeaderId() !== appendEntriesArgs.leaderId) {
-            console.log("leader in appendentries " + appendEntriesArgs.leaderId);
             state.setLeaderId(appendEntriesArgs.leaderId);
         }
-        console.log("leader in state is " + state.getLeaderId());
+        if (appendEntriesArgs.prevLogIndex === -1 ||
+            (appendEntriesArgs.prevLogIndex < log.length() &&
+                appendEntriesArgs.prevLogTerm === log.findByIndex(appendEntriesArgs.prevLogIndex).term)) {
+            response.success = true;
+            replicateLogEntries(appendEntriesArgs);
+            updateCommitIndexFollower(appendEntriesArgs);
+        }
     }
     response.term = state.getCurrentTerm();
     console.log(`AppendEntries response: ${JSON.stringify(response)}`);
