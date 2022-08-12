@@ -1,5 +1,4 @@
 const fs = require('fs');
-const { start } = require('../../rpc/rpc-server');
 const Constants = require("../../utils/constants");
 
 const log = loadPersistentLog();

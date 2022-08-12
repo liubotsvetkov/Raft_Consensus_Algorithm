@@ -12,7 +12,7 @@ message Entry {
 }
 
 message AERequest {
-    string term = 1;
+    int32 term = 1;
     string leaderId = 2;
     int32 prevLogIndex = 3;
     int32 prevLogTerm = 4;

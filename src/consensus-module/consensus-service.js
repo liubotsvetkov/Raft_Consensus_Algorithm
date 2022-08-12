@@ -7,7 +7,9 @@ let leaderElectionTimer;
 
 function generateRandomInterval() {
     //random interval between 300ms and 500ms
-    return Math.floor(Math.random() * (50000 - 30000 + 1) + 30000);
+    const interval = Math.floor(Math.random() * (500 - 300 + 1) + 300);
+    console.log("Random interval is " + interval);
+    return interval;
 }
 
 function stopElectionTimer() {
@@ -57,11 +59,11 @@ function handleVoteResponse(voteResponse, savedCurrentTerm) {
     if (voteResponse.term > savedCurrentTerm) {
         console.log('Term in response is bigger, hence becoming a follower.');
         startFollower(voteResponse.term);
-        return false;
     } else if (voteResponse.term === savedCurrentTerm && voteResponse.voteGranted) {
         console.log(`Vote granted in handleVoteResponse is true; term is ${voteResponse.term}; current term is ${savedCurrentTerm}; voteGranted is ${voteResponse.voteGranted}`);
         return true;
     }
+    return false;
 }
 
 function isMajorityInConsensus(count) {
@@ -76,6 +78,7 @@ function startFollower(term, setState = true, setOffTimer = true) {
         state.setFollowerState(term);
     }
     if (setOffTimer) {
+        console.log("Resetting election timer!");
         setOffElectionTimer();
     }
 }
@@ -84,12 +87,14 @@ function startLeader() {
     state.setLeaderState();
     console.log(`Becomes Leader; term = ${state.getCurrentTerm()}; nextIndex = ${state.getNextIndex()}; matchIndex = ${state.getMatchIndex()}; log = ${log.getLogDataReadOnly()}`);
 
+    console.log("Starting to send heartbeats at " + + new Date().getTime());
+    leaderSendHeartBeats();
     let heartBeatTimer = setInterval(() => {
         if (state.getStatus() !== Constants.status.Leader) {
             clearInterval(heartBeatTimer);
         }
         leaderSendHeartBeats();
-    }, 5000);
+    }, 50);
 
 }
 
@@ -122,7 +127,7 @@ async function sendAppendEntriesRequest(peer, savedCurrentTerm, peerNextIndex) {
         entries: log.getLogDataReadOnly(peerNextIndex),
         leaderCommit: state.getCommitIndex()
     }
-    console.log(`Sending AppendEntries to peer ${peer.id}: peerNextIndex is ${peerNextIndex}, appendEntriesArgs is ${JSON.stringify(appendEntriesArgs)}`);
+    console.log(`Sending AppendEntries to peer ${peer.id}: peerNextIndex is ${peerNextIndex}, appendEntriesArgs is ${JSON.stringify(appendEntriesArgs)}` + + new Date().getTime());
 
     const result = await new Promise((resolve, reject) => {
         peer.client_obj.appendEntries(appendEntriesArgs, (error, result) => {
@@ -164,24 +169,12 @@ function handleAppendEntriesResponse(appendEntriesResponse, savedCurrentTerm, pe
         startFollower(appendEntriesResponse.term);
         return;
     }
-
-    if (state.getStatus() === Constants.status.Leader && savedCurrentTerm === appendEntriesResponse.term) {
-        if (appendEntriesResponse.success) {
-            const newEntries = log.getLogDataReadOnly(peerNextIndex);
-            state.setNextIndex(peer.id, peerNextIndex + newEntries.length);
-            state.setMatchIndex(peer.id, state.getNextIndex(peer.id) - 1);
-            console.log(`AppendEntries reply from ${peer.id} success: nextIndex: ${state.getNextIndex(peer.id)}, matchIndex: ${state.getMatchIndex(peer.id)}`);
-            updateCommitIndex();
-        } else {
-            state.setNextIndex(peer.id, peerNextIndex - 1);
-            console.log(`AppendEntries reply from ${peer.id}: Failure - nextIndex is ${state.getNextIndex(peer.id)}`);
-        }
-    }
 }
 
 function initiatePeerVoting(savedCurrentTerm) {
     let votesReceived = 1;
 
+    console.log("Starting to send vote requests at " + + new Date().getTime());
     return Promise.all(Object.entries(rpc_clients).map(async (client) => {
         let voteResponse;
         try {
@@ -232,7 +225,7 @@ async function startElection() {
     await initiatePeerVoting(savedCurrentTerm);
 
     if (state.getStatus() === Constants.status.Candidate) {
-        this.setOffElectionTimer();
+        setOffElectionTimer();
     }
     console.log("election status is " + state.getStatus());
 }
@@ -240,7 +233,7 @@ async function startElection() {
 function processVoteRequest(requestVoteArgs) {
     console.log('request coming at ' + new Date().getTime());
     const { lastLogIndex, lastLogTerm } = getLastLogIndexAndTerm();
-    console.log(`RequestVote: ${requestVoteArgs}; currentTerm: ${state.getCurrentTerm()}; votedFor: ${state.getVotedFor()}; lastLogIndex/lastLogTerm: (${lastLogIndex}/${lastLogTerm})`);
+    console.log(`RequestVote: ${JSON.stringify(requestVoteArgs)}; currentTerm: ${state.getCurrentTerm()}; votedFor: ${state.getVotedFor()}; lastLogIndex/lastLogTerm: (${lastLogIndex}/${lastLogTerm})`);
 
     if (requestVoteArgs.term > state.getCurrentTerm()) {
         console.log(`Term in requestVote is bigger: ${requestVoteArgs.term}; currentTerm is ${state.getCurrentTerm()}; Becoming a follower.`);
@@ -250,7 +243,7 @@ function processVoteRequest(requestVoteArgs) {
     const response = voteForLeader(requestVoteArgs, lastLogIndex, lastLogTerm);
 
     console.log('Status is ' + state.getStatus());
-    console.log(`RequestVote response: ${JSON.stringify(response)}`);
+    console.log(`RequestVote response: ${JSON.stringify(response)}` + + new Date().getTime());
     return response;
 }
 
@@ -262,7 +255,7 @@ function setOffElectionTimer() {
     leaderElectionTimer = setInterval(() => {
         console.log('callback executed at ' + new Date().getTime());
         startElection();
-    }), generateRandomInterval();
+    }, generateRandomInterval());
 }
 
 function replicateLogEntries(appendEntriesArgs) {
@@ -289,12 +282,13 @@ function updateCommitIndex(appendEntriesArgs) {
 }
 
 function appendEntries(appendEntriesArgs) {
-    console.log(`AppendEntries: ${JSON.stringify(appendEntriesArgs)}`);
+    console.log(`AppendEntries: ${JSON.stringify(appendEntriesArgs)} received at ` + + new Date().getTime());
     if (appendEntriesArgs.term > state.getCurrentTerm()) {
         console.log('Term in AppendEntries request is bigger, hence becoming a follower.');
         startFollower(appendEntriesArgs.term, true, false);
     }
-    let response = { success: false };
+    let response = { success: true };
+    console.log(`appendentries term: ${appendEntriesArgs.term}; state current term: ${state.getCurrentTerm()}; equal ? ${appendEntriesArgs.term === state.getCurrentTerm()}`);
     if (appendEntriesArgs.term === state.getCurrentTerm()) {
         if (state.getStatus() !== Constants.status.Follower) {
             startFollower(appendEntriesArgs.term);
@@ -302,18 +296,14 @@ function appendEntries(appendEntriesArgs) {
             startFollower(appendEntriesArgs.term, false, true);
         }
         if (state.getLeaderId() !== appendEntriesArgs.leaderId) {
+            console.log("leader in appendentries " + appendEntriesArgs.leaderId);
             state.setLeaderId(appendEntriesArgs.leaderId);
         }
-        if (appendEntriesArgs.prevLogIndex === -1 ||
-            (appendEntriesArgs.prevLogIndex < log.length() &&
-                appendEntriesArgs.prevLogTerm === log.findByIndex(appendEntriesArgs.prevLogIndex).term)) {
-            response.success = true;
-            replicateLogEntries(appendEntriesArgs);
-            updateCommitIndex(appendEntriesArgs);
-        }
+        console.log("leader in state is " + state.getLeaderId());
     }
     response.term = state.getCurrentTerm();
     console.log(`AppendEntries response: ${JSON.stringify(response)}`);
+    console.log(`Leader is ${state.getLeaderId()}`);
     return response;
 }
 
